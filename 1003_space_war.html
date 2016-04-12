@@ -1,0 +1,266 @@
+<canvas 
+	id="myCanvas" 
+	width="800" height="600" 
+	style="border:1px solid #000000;">
+</canvas>
+
+<script>
+	var canvas = document.getElementById("myCanvas");
+	var context = canvas.getContext("2d");
+	
+	var playerW = 50;
+	var playerH = 20;
+	var playerX = 25;
+	var playerY = (canvas.height / 2) - (playerH / 2);	
+	var playerC = "RED";
+	var playerSX = 5;
+	var playerSY = 5;
+	var playerMR = false;
+	var playerML = false;
+	var playerMU = false;
+	var playerMD = false;
+	
+	var shootW = 10;
+	var shootH = 10;
+	var shootX = new Array();
+	var shootY = new Array();
+	var shootC = "GREEN";
+	var shootSX = 10;
+	
+	var bg1 = new Image();
+	var bg2 = new Image();
+	bg1.src = "images/bg1.jpg";	
+	bg2.src = "images/bg2.jpg";
+	var bg1X = 0;
+	var bg1Y = 0;
+	var bg2X = canvas.width;
+	var bg2Y = 0;
+	var bg1W = 800;
+	var bg2W = 800;
+	var bgSX = 5;
+	
+	var menuBG = new Image();
+	menuBG.src = "images/menuBG.jpg";
+	var menuButtonPlay = new Image();
+	menuButtonPlay.src = "images/menuPlay.jpg";
+	var menuButtonPlayX = 300;
+	var menuButtonPlayY = 430;
+	
+	var sceneManager = "menu";
+	
+	var mouseX;
+	var mouseY;
+	var mouseUp = false;
+	
+	function drawRect(x, y, w, h, color, fill)
+	{
+		if(fill == true)
+		{
+			context.fillStyle = color;
+			context.fillRect(x,y,w,h);
+		}
+		else
+		{
+			context.strokeStyle = color;
+			context.strokeRect(x,y,w,h);
+		}
+	}	
+	
+	var _keyDown = function(e)
+	{
+		switch (e.keyCode)
+		{
+			case 87: playerMU = true; break;
+			case 83: playerMD = true; break;
+			case 65: playerML = true; break;
+			case 68: playerMR = true; break;
+			case 32: shoot();
+		}
+	}
+
+	var _keyUp = function(e)
+	{
+		switch (e.keyCode)
+		{
+			case 87: playerMU = false; break;
+			case 83: playerMD = false; break;
+			case 65: playerML = false; break;
+			case 68: playerMR = false; break;
+		}				
+	}
+	
+	var _mouseUp = function(e)
+	{
+		mouseX = e.x;
+		mouseY = e.y;
+		mouseUp = true;
+	}
+	
+	document.addEventListener("keydown", _keyDown, true);
+	document.addEventListener("keyup", _keyUp,   true);
+	document.addEventListener("mouseup", _mouseUp, true);
+	
+	function shoot()
+	{
+		shootX.push(playerX + playerW + 3);
+		shootY.push((playerY + playerH / 2) - shootH / 2);
+	}
+	
+	//Função de movimentação do Jogador.
+	function playerMovement()
+	{
+		if(playerMR == true) playerX += playerSX;
+		if(playerML == true) playerX -= playerSX;
+		if(playerMU == true) playerY -= playerSY;
+		if(playerMD == true) playerY += playerSY;
+	}
+	
+	//Função de colisão do player com as extremidades
+	function playerCollisionBounds()
+	{
+		if (playerY < 0)
+		{
+			playerY = 0;
+		}	
+		if (playerY + playerH > canvas.height)
+		{
+			playerY = canvas.height - playerH;
+		}
+		if (playerX < 0)
+		{
+			playerX = 0;
+		}
+		if (playerX + playerW > canvas.width)
+		{
+			playerX = canvas.width - playerW;
+		}
+	}
+	
+	//Função de movimentação do tiro.
+	function shootMovement()
+	{
+		if(shootX.length > 0)
+		{
+			for(var i = 0; i < shootX.length; i++)
+			{
+				shootX[i] += shootSX;
+				
+				//colisão do tiro com a parede
+				if(shootX[i] + shootW > canvas.width)
+				{
+					shootX.splice(i, 1);
+					shootY.splice(i, 1);
+				}
+			}
+		}
+	}
+	
+	//Função de movimentação do background.
+	function backgroundMovement()
+	{
+		bg1X -= bgSX;
+		bg2X -= bgSX;
+		
+		if(bg1X + bg1W <= 0)
+		{
+			bg1X = canvas.width;
+		}
+		
+		if(bg2X + bg2W <= 0)
+		{
+			bg2X = canvas.width;
+		}
+	}
+	
+	function menuButtonDetection()
+	{
+		if(mouseUp)
+		{
+			//largura do botao de play - 186
+			//altura do botao de play - 84
+			if(mouseX > menuButtonPlayX && 
+			   mouseX < menuButtonPlayX + 186 &&
+			   mouseY > menuButtonPlayY && 
+			   mouseY < menuButtonPlayY + 84)
+			{
+				sceneManager = "game";
+			}			
+			
+			mouseUp = false;
+		}
+	}
+	
+	function update()
+	{
+		if(sceneManager == "menu")
+		{
+			menuButtonDetection();
+		}
+		else if(sceneManager == "game")
+		{
+			playerMovement();
+			playerCollisionBounds();
+			shootMovement();
+			backgroundMovement();
+		}
+	}
+	
+	//Função para desenhar o menu
+	function drawMenu()
+	{
+		context.drawImage(menuBG, 0, 0);
+		context.drawImage(menuButtonPlay, menuButtonPlayX, menuButtonPlayY);
+	}
+	
+	//Função para desenhar o jogo.
+	function drawGame()
+	{
+		context.drawImage(bg1, bg1X, bg1Y);
+		context.drawImage(bg2, bg2X, bg2Y);
+		
+		//Player
+		drawRect(playerX, playerY, playerW, playerH, playerC, true);
+		
+		//Shoot
+		if(shootX.length > 0)
+		{
+			for(var i = 0; i < shootX.length; i++)
+			{
+				drawRect(shootX[i], shootY[i], shootW, shootH, shootC, true);
+			}
+		}
+	}
+	
+	function draw()
+	{
+		context.clearRect(0, 0, canvas.width, canvas.height);
+		
+		if(sceneManager == "menu")
+		{
+			drawMenu();
+		}
+		else if(sceneManager == "game")
+		{		
+			drawGame();
+		}		
+	}
+	
+	function loop()
+	{
+		update();
+		draw();
+		setTimeout(loop, 30);
+	}
+	
+	loop();
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+</script>
